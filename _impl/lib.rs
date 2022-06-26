@@ -57,7 +57,7 @@ impl Substitute {
         let mut pos: Vec<Vec<usize>> =
             (0..total).map(|_| iters.iter_mut().map_while(|n| n.next()).collect()).collect();
         pos.reverse();
-        Iter { sub, pos, idx: 0, total }
+        Iter { sub, pos }
     }
 }
 
@@ -68,10 +68,8 @@ struct Sub {
 }
 
 struct Iter<'sub> {
-    sub:   &'sub [Sub],
-    pos:   Vec<Vec<usize>>,
-    idx:   usize,
-    total: usize,
+    sub: &'sub [Sub],
+    pos: Vec<Vec<usize>>,
 }
 
 type Pairs<'sub> = Vec<(&'sub Ident, &'sub TypePath)>;
@@ -80,15 +78,11 @@ impl<'sub> Iterator for Iter<'sub> {
     type Item = Pairs<'sub>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.idx == self.total {
-            return None;
-        }
-        let mut pair = Vec::with_capacity(self.sub.len());
         let pos = self.pos.pop()?;
+        let mut pair = Vec::with_capacity(self.sub.len());
         for (sub, p) in self.sub.iter().zip(pos.into_iter()) {
             pair.push((&sub.id, &sub.ty[p]))
         }
-        self.idx += 1;
         Some(pair)
     }
 }
