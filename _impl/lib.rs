@@ -2,7 +2,7 @@
 use proc_macro::TokenStream;
 use proc_macro2::{Group, TokenStream as TokenStream2, TokenTree as TT};
 use quote::quote;
-use syn::{buffer::TokenBuffer, parse::Parse, parse_macro_input, Ident, Path, Token};
+use syn::{buffer::TokenBuffer, parse::Parse, parse_macro_input, Ident, Token, TypePath};
 
 #[proc_macro_attribute]
 pub fn genericity_select(args: TokenStream, input: TokenStream) -> TokenStream {
@@ -60,7 +60,7 @@ impl Substitute {
         // transpose
         let mut iters: Vec<_> = v.into_iter().map(|n| n.into_iter()).collect();
         let pos = (0..total).map(|_| iters.iter_mut().map_while(|n| n.next()).collect()).collect();
-        dbg!(total, &pos);
+        // dbg!(total, &pos);
         Iter { sub, pos, idx: 0, total }
     }
 }
@@ -68,7 +68,7 @@ impl Substitute {
 #[derive(Debug)]
 struct Sub {
     id: Ident,
-    ty: Vec<Path>,
+    ty: Vec<TypePath>,
 }
 
 struct Iter<'sub> {
@@ -78,7 +78,7 @@ struct Iter<'sub> {
     total: usize,
 }
 
-type Pairs<'sub> = Vec<(&'sub Ident, &'sub Path)>;
+type Pairs<'sub> = Vec<(&'sub Ident, &'sub TypePath)>;
 
 impl<'sub> Iterator for Iter<'sub> {
     type Item = Pairs<'sub>;
@@ -95,26 +95,6 @@ impl<'sub> Iterator for Iter<'sub> {
         self.idx += 1;
         Some(pair)
     }
-}
-
-#[test]
-fn test_t1() { helper("T = u8", 1); }
-#[test]
-fn test_t1_u1() { helper("T = u8, U = usize", 1); }
-#[test]
-fn test_t2_u1() { helper("T = u8 | u32, U = usize", 2); }
-#[test]
-fn test_t1_u2() { helper("T = u8, U = Vec<&str> | std::collections::HashSet<&str>", 2); }
-#[cfg(test)]
-fn helper(s: &str, count: usize) {
-    let parsed: Substitute = syn::parse_str(s).unwrap();
-    // for v in parsed.iter() {
-    //     for (id, ty) in v {
-    //         // eprintln!("id = {id:#?}\nty = {ty:#?}")
-    //     }
-    //     // eprintln!("\n--------");
-    // }
-    assert_eq!(parsed.iter().count(), count);
 }
 
 impl Parse for Substitute {
@@ -137,4 +117,18 @@ impl Parse for Substitute {
         }
         Ok(Substitute(sub))
     }
+}
+
+#[test]
+fn test_t1() { helper("T = u8", 1); }
+#[test]
+fn test_t1_u1() { helper("T = u8, U = usize", 1); }
+#[test]
+fn test_t2_u1() { helper("T = u8 | u32, U = usize", 2); }
+#[test]
+fn test_t1_u2() { helper("T = u8, U = Vec<&str> | std::collections::HashSet<&str>", 2); }
+#[cfg(test)]
+fn helper(s: &str, count: usize) {
+    let parsed: Substitute = syn::parse_str(s).unwrap();
+    assert_eq!(parsed.iter().count(), count);
 }
