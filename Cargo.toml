@@ -1,0 +1,10 @@
+[package]
+name = "genericity_select"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+_impl = {path = "_impl"}
+
+[workspace]
+members = ["_impl"]
