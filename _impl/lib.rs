@@ -1,63 +1,47 @@
-#![allow(unused)]
+// #![allow(unused)]
 use proc_macro::TokenStream;
 use proc_macro2::{Group, TokenStream as TokenStream2, TokenTree as TT};
 use quote::quote;
-use syn::{
-    buffer::TokenBuffer,
-    parse::{Parse, ParseBuffer, Parser},
-    parse_macro_input,
-    punctuated::Punctuated,
-    token, Ident, ItemImpl, Path, Token, TypePath,
-};
+use syn::{buffer::TokenBuffer, parse::Parse, parse_macro_input, Ident, Path, Token};
 
 #[proc_macro_attribute]
 pub fn genericity_select(args: TokenStream, input: TokenStream) -> TokenStream {
     let args = parse_macro_input!(args as Substitute);
     let buf = TokenBuffer::new(input);
 
-    // let mut ts = Vec::new();
-    // for id_ty in args.iter() {
-    //     let mut cursor = buf.begin();
-    //     while let Some((tt, c)) = cursor.token_tree() {
-    //         cursor = c;
-    //         ts.push(token_tree(tt, id_ty));
-    //     }
-    // }
-    // for tt in input {
-    //     let tt = match tt {
-    //         TT::Ident(id) => {
-    //             todo!()
-    //         }
-    //         TT::Group(g) => {
-    //             todo!()
-    //         }
-    //         t => t,
-    //     };
-    //     ts.push(tt);
-    // }
+    let mut ts = Vec::new();
+    for pairs in args.iter() {
+        let mut cursor = buf.begin();
+        while let Some((tt, c)) = cursor.token_tree() {
+            cursor = c;
+            ts.push(token_tree(tt, &pairs));
+        }
+    }
 
-    dbg!(args.iter().count());
+    // dbg!(args.iter().count());
     // eprintln!("args = {:#?}", args.0);
 
-    // ts.into_iter().map(TokenStream::from).collect()
-    Default::default()
+    ts.into_iter().map(TokenStream::from).collect()
+    // Default::default()
 }
 
-// fn token_tree(tt: TT, (id, ty): <Iter as Iterator>::Item) -> TokenStream2 {
-//     match tt {
-//         TT::Ident(i) if i == *id => quote!(#ty),
-//         TT::Group(g) => group(g, (id, ty)),
-//         t => t.into(),
-//     }
-// }
+fn token_tree(tt: TT, pairs: &Pairs) -> TokenStream2 {
+    match tt {
+        TT::Ident(i) => pairs.iter()
+                             .find_map(|(id, ty)| if **id == i { Some(quote!(#ty)) } else { None })
+                             .unwrap_or_else(|| TT::Ident(i).into()),
+        TT::Group(g) => group(g, pairs),
+        t => t.into(),
+    }
+}
 
-// fn group(g: Group, id_ty: <Iter as Iterator>::Item) -> TokenStream2 {
-//     let (del, span) = (g.delimiter(), g.span());
-//     let ts = g.stream().into_iter().map(|tt| token_tree(tt, id_ty)).collect();
-//     let mut new = Group::new(del, ts);
-//     new.set_span(span);
-//     TT::Group(new).into()
-// }
+fn group(g: Group, id_ty: &Pairs) -> TokenStream2 {
+    let (del, span) = (g.delimiter(), g.span());
+    let ts = g.stream().into_iter().map(|tt| token_tree(tt, id_ty)).collect();
+    let mut new = Group::new(del, ts);
+    new.set_span(span);
+    TT::Group(new).into()
+}
 
 #[derive(Debug)]
 struct Substitute(Vec<Sub>);
