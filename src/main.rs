@@ -39,8 +39,22 @@ struct V<X, Y> {
     y: Y,
 }
 
+#[genericity_select(X = u32, Y = u8)]
+impl V<X, Y> {
+    pub fn add_x(&self, x: X) -> X { self.x + x }
+
+    pub fn add_y(&self, y: Y) -> Y { self.y + y }
+}
+
 #[genericity_select(X = f64 | f32 , Y = f64 | f32)]
 impl V<X, Y> {
+    pub fn add_x(&self, x: X) -> X { self.x + x }
+
+    pub fn add_y(&self, y: Y) -> Y { self.y + y }
+}
+
+#[genericity_select(X = usize | u64)]
+impl<Y: std::ops::Add<Output = Y> + Copy> V<X, Y> {
     pub fn add_x(&self, x: X) -> X { self.x + x }
 
     pub fn add_y(&self, y: Y) -> Y { self.y + y }
