@@ -54,7 +54,9 @@ impl Substitute {
            });
         // transpose
         let mut iters: Vec<_> = v.into_iter().map(|n| n.into_iter()).collect();
-        let pos = (0..total).map(|_| iters.iter_mut().map_while(|n| n.next()).collect()).collect();
+        let mut pos: Vec<Vec<usize>> =
+            (0..total).map(|_| iters.iter_mut().map_while(|n| n.next()).collect()).collect();
+        pos.reverse();
         Iter { sub, pos, idx: 0, total }
     }
 }
