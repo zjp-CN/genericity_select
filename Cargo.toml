@@ -3,6 +3,10 @@ name = "genericity_select"
 version = "0.1.0"
 edition = "2021"
 
+[[bin]]
+name = "genericity_select"
+path = "genericity_select.rs"
+
 [dependencies]
 _impl = {path = "_impl"}
 
