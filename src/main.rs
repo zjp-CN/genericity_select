@@ -1,4 +1,5 @@
 #![allow(unused)]
+use _impl::genericity_select;
 fn main() {}
 
 pub struct Vec2<T> {
@@ -6,22 +7,41 @@ pub struct Vec2<T> {
     y: T,
 }
 
-#[_impl::genericity_select(T = u8 | u16 | u32)]
-// #[_impl::genericity_select(T = u8|u16, U=Vec<u8>|u8)]
+#[genericity_select(T = u8 | u16 | u32 | usize | u64)]
 impl Vec2<T> {
-    // 在这个作用域内 T 能够使用所有u8、u6共同的方法
     pub const fn new(x: T, y: T) -> Self { Self { x, y } }
 
     pub const fn distance(&self) -> T { self.x * self.x + self.y * self.y }
 }
 
-// pub struct Dim<T, U> {
-//     x: T,
-//     y: U,
-// }
-// #[_impl::genericity_select(T = u8, U=u8)]
-// impl Dim<T, U> {
-//     pub const fn new(x: T, y: U) -> Self { Self { x, y } }
+#[genericity_select(T = f64 | f32)]
+impl Vec2<T> {
+    pub const fn new(x: T, y: T) -> Self { Self { x, y } }
 
-//     pub const fn distance(&self) -> T { self.x * self.x + self.y * self.y }
-// }
+    pub fn distance(&self) -> T { self.x * self.x + self.y * self.y }
+}
+
+struct Container<C, T> {
+    c: C,
+    t: T,
+}
+
+#[genericity_select(T = f64, U = Vec<f64>)]
+impl Container<U, T> {
+    fn push(&mut self, t: T) {
+        self.c.push(t);
+        self.t = t;
+    }
+}
+
+struct V<X, Y> {
+    x: X,
+    y: Y,
+}
+
+#[genericity_select(X = f64 | f32 , Y = f64 | f32)]
+impl V<X, Y> {
+    pub fn add_x(&self, x: X) -> X { self.x + x }
+
+    pub fn add_y(&self, y: Y) -> Y { self.y + y }
+}
