@@ -1,4 +1,3 @@
-// #![allow(unused)]
 use proc_macro::TokenStream;
 use proc_macro2::{Group, TokenStream as TokenStream2, TokenTree as TT};
 use quote::quote;
@@ -18,11 +17,7 @@ pub fn genericity_select(args: TokenStream, input: TokenStream) -> TokenStream {
         }
     }
 
-    // dbg!(args.iter().count());
-    // eprintln!("args = {:#?}", args.0);
-
     ts.into_iter().map(TokenStream::from).collect()
-    // Default::default()
 }
 
 fn token_tree(tt: TT, pairs: &Pairs) -> TokenStream2 {
@@ -60,7 +55,6 @@ impl Substitute {
         // transpose
         let mut iters: Vec<_> = v.into_iter().map(|n| n.into_iter()).collect();
         let pos = (0..total).map(|_| iters.iter_mut().map_while(|n| n.next()).collect()).collect();
-        // dbg!(total, &pos);
         Iter { sub, pos, idx: 0, total }
     }
 }
