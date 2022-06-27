@@ -5,7 +5,7 @@ use syn::{parse::Parse, parse_macro_input, Ident, Token, TypePath};
 
 #[proc_macro_attribute]
 pub fn genericity_select(args: TokenStream, input: TokenStream) -> TokenStream {
-    let args = parse_macro_input!(args as Substitute);
+    let args = parse_macro_input!(args as Args);
     let input = TokenStream2::from(input);
 
     let ts = args.iter().map(|pairs| {
@@ -17,9 +17,9 @@ pub fn genericity_select(args: TokenStream, input: TokenStream) -> TokenStream {
 }
 
 #[derive(Debug)]
-struct Substitute(Vec<Sub>);
+struct Args(Vec<IdTypes>);
 
-impl Substitute {
+impl Args {
     fn iter(&self) -> Iter {
         let sub = &self.0;
         let len = sub.iter().map(|v| v.ty.len());
@@ -40,13 +40,13 @@ impl Substitute {
 }
 
 #[derive(Debug)]
-struct Sub {
+struct IdTypes {
     id: Ident,
     ty: Vec<TypePath>,
 }
 
 struct Iter<'sub> {
-    sub: &'sub [Sub],
+    sub: &'sub [IdTypes],
     pos: Vec<Vec<usize>>,
 }
 
@@ -65,7 +65,7 @@ impl<'sub> Iterator for Iter<'sub> {
     }
 }
 
-impl Parse for Substitute {
+impl Parse for Args {
     fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
         let mut sub = Vec::with_capacity(8);
         while !input.is_empty() {
@@ -82,9 +82,9 @@ impl Parse for Substitute {
                 let _: Token![,] = input.parse()?;
             }
             assert!(!ty.is_empty(), "{:?} must at least select one type!", id);
-            sub.push(Sub { id, ty });
+            sub.push(IdTypes { id, ty });
         }
-        Ok(Substitute(sub))
+        Ok(Args(sub))
     }
 }
 
@@ -104,6 +104,6 @@ fn test_t2_u1() { helper("T = u8 | u32, U = usize", 2); }
 fn test_t1_u2() { helper("T = u8, U = Vec<&str> | std::collections::HashSet<&str>", 2); }
 #[cfg(test)]
 fn helper(s: &str, count: usize) {
-    let parsed: Substitute = syn::parse_str(s).unwrap();
+    let parsed: Args = syn::parse_str(s).unwrap();
     assert_eq!(parsed.iter().count(), count);
 }
