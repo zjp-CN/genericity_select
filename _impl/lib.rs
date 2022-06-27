@@ -1,41 +1,20 @@
 use proc_macro::TokenStream;
-use proc_macro2::{Group, TokenStream as TokenStream2, TokenTree as TT};
+use proc_macro2::TokenStream as TokenStream2;
 use quote::quote;
-use syn::{buffer::TokenBuffer, parse::Parse, parse_macro_input, Ident, Token, TypePath};
+use syn::{parse::Parse, parse_macro_input, Ident, Token, TypePath};
 
 #[proc_macro_attribute]
 pub fn genericity_select(args: TokenStream, input: TokenStream) -> TokenStream {
     let args = parse_macro_input!(args as Substitute);
-    let buf = TokenBuffer::new(input);
+    let input = TokenStream2::from(input);
 
-    let mut ts = Vec::new();
+    let mut ts: Vec<TokenStream> = Vec::new();
     for pairs in args.iter() {
-        let mut cursor = buf.begin();
-        while let Some((tt, c)) = cursor.token_tree() {
-            cursor = c;
-            ts.push(token_tree(tt, &pairs));
-        }
+        let alias = pairs.into_iter().map(|(id, ty)| quote!( type #id = #ty; ));
+        ts.push(quote!(const _: () = { #(#alias)* #input };).into());
     }
 
-    ts.into_iter().map(TokenStream::from).collect()
-}
-
-fn token_tree(tt: TT, pairs: &Pairs) -> TokenStream2 {
-    match tt {
-        TT::Ident(i) => pairs.iter()
-                             .find_map(|(id, ty)| if **id == i { Some(quote!(#ty)) } else { None })
-                             .unwrap_or_else(|| TT::Ident(i).into()),
-        TT::Group(g) => group(g, pairs),
-        t => t.into(),
-    }
-}
-
-fn group(g: Group, id_ty: &Pairs) -> TokenStream2 {
-    let (del, span) = (g.delimiter(), g.span());
-    let ts = g.stream().into_iter().map(|tt| token_tree(tt, id_ty)).collect();
-    let mut new = Group::new(del, ts);
-    new.set_span(span);
-    TT::Group(new).into()
+    ts.into_iter().collect()
 }
 
 #[derive(Debug)]
@@ -93,7 +72,7 @@ impl Parse for Substitute {
         while !input.is_empty() {
             let id = input.parse()?;
             let _: Token![=] = input.parse()?;
-            let mut ty = Vec::new();
+            let mut ty = Vec::with_capacity(8);
             while !(input.is_empty() || input.peek(Token![,])) {
                 ty.push(input.parse()?);
                 if input.peek(Token![|]) {
@@ -103,12 +82,19 @@ impl Parse for Substitute {
             if input.peek(Token![,]) {
                 let _: Token![,] = input.parse()?;
             }
+            assert!(!ty.is_empty(), "{:?} must at least select one type!", id);
             sub.push(Sub { id, ty });
         }
         Ok(Substitute(sub))
     }
 }
 
+#[test]
+#[should_panic]
+fn test_t0_empty() { helper("T = ", 0); }
+#[test]
+#[should_panic]
+fn test_t0_empty_with_comma() { helper("T = ,", 0); }
 #[test]
 fn test_t1() { helper("T = u8", 1); }
 #[test]
