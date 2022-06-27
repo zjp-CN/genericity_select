@@ -8,13 +8,12 @@ pub fn genericity_select(args: TokenStream, input: TokenStream) -> TokenStream {
     let args = parse_macro_input!(args as Substitute);
     let input = TokenStream2::from(input);
 
-    let mut ts: Vec<TokenStream> = Vec::new();
-    for pairs in args.iter() {
-        let alias = pairs.into_iter().map(|(id, ty)| quote!( type #id = #ty; ));
-        ts.push(quote!(const _: () = { #(#alias)* #input };).into());
-    }
-
-    ts.into_iter().collect()
+    let ts = args.iter().map(|pairs| {
+                            let f = |(id, ty)| quote!( type #id = #ty;);
+                            let alias = pairs.into_iter().map(f);
+                            quote!(const _: () = { #(#alias)* #input };)
+                        });
+    quote!(#(#ts)*).into()
 }
 
 #[derive(Debug)]
