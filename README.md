@@ -1,4 +1,4 @@
-Select the generics to expand:
+Select the generics to implement:
 
 ```rust
 pub struct V<X, Y> {
@@ -41,34 +41,11 @@ const _: () = {
         }
     }
 };
-const _: () = {
-    type X = f64;
-    type Y = f32;
-    impl V<X, Y> {
-        pub fn add_x(&self, x: X) -> X {
-            self.x + x
-        }
-        pub fn add_y(&self, y: Y) -> Y {
-            self.y + y
-        }
-    }
-};
-const _: () = {
-    type X = f32;
-    type Y = f32;
-    impl V<X, Y> {
-        pub fn add_x(&self, x: X) -> X {
-            self.x + x
-        }
-        pub fn add_y(&self, y: Y) -> Y {
-            self.y + y
-        }
-    }
-};
+// ... see cargo_expand.rs for full expansion
 ```
 
 The reason to use type alias is to avoid invalid syntax when 
-methods own their separate generics with the same name.[^alias]
+separate generics with the same name occur in the impl body.[^alias]
 
 ```rust
 // If use token replacement, the expansion
