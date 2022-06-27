@@ -59,3 +59,15 @@ impl<Y: std::ops::Add<Output = Y> + Copy> V<X, Y> {
 
     pub fn add_y(&self, y: Y) -> Y { self.y + y }
 }
+
+struct Thing<T>(T);
+
+// If use token replacement, the expansion
+// `fn assert_sync<Vec<f32>: Sync>()` will be invalid syntax.
+#[genericity_select(T = Vec<f32> | Vec<f64>)]
+impl Thing<T> {
+    fn demo() {
+        fn assert_sync<T: Sync>() {}
+        assert_sync::<T>();
+    }
+}
