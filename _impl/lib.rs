@@ -24,16 +24,14 @@ impl Args {
         let sub = &self.0;
         let len = sub.iter().map(|v| v.ty.len());
         let total = len.clone().product();
-        let mut v = Vec::with_capacity(len.len());
+        let mut v: Vec<Box<dyn Iterator<Item = usize>>> = Vec::with_capacity(len.len());
         len.fold(1, |acc, l| {
-               let f = |n| n / acc % l;
-               v.push((0..total).map(f).collect::<Vec<_>>());
+               v.push(Box::new((0..total).map(move |n| n / acc % l)));
                acc * l
            });
         // transpose
-        let mut iters: Vec<_> = v.into_iter().map(|n| n.into_iter()).collect();
         let mut pos: Vec<Vec<usize>> =
-            (0..total).map(|_| iters.iter_mut().map_while(|n| n.next()).collect()).collect();
+            (0..total).map(|_| v.iter_mut().map_while(|n| n.next()).collect()).collect();
         pos.reverse();
         Iter { sub, pos }
     }
