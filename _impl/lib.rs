@@ -30,7 +30,7 @@ impl Args {
                acc * l
            });
         // transpose
-        let mut pos: Vec<Vec<usize>> =
+        let mut pos: Pos =
             (0..total).map(|_| v.iter_mut().map_while(|n| n.next()).collect()).collect();
         pos.reverse();
         Iter { sub, pos }
@@ -45,9 +45,10 @@ struct IdTypes {
 
 struct Iter<'sub> {
     sub: &'sub [IdTypes],
-    pos: Vec<Vec<usize>>,
+    pos: Pos,
 }
 
+type Pos = Vec<Box<[usize]>>;
 type Pairs<'sub> = Vec<(&'sub Ident, &'sub TypePath)>;
 
 impl<'sub> Iterator for Iter<'sub> {
@@ -56,7 +57,7 @@ impl<'sub> Iterator for Iter<'sub> {
     fn next(&mut self) -> Option<Self::Item> {
         let pos = self.pos.pop()?;
         let mut pair = Vec::with_capacity(self.sub.len());
-        for (sub, p) in self.sub.iter().zip(pos.into_iter()) {
+        for (sub, &p) in self.sub.iter().zip(pos.iter()) {
             pair.push((&sub.id, &sub.ty[p]))
         }
         Some(pair)
